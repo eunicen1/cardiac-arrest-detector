@@ -68,44 +68,41 @@ def detectPQRSTf(sig):
         percent = rmaxs[i,2] # obtain percentage %
         if int(percent) >= 100:
             QRS.append([rmaxs[i,0], rmaxs[i,1], i])
-            print(i)
     QRS = np.array(QRS)
     s, _ = QRS.shape
 
-    #BROKEN!!!!!!!!!!!!
     #get estimated P, T, QRS(mod) peaks 
     P = []
     T = []
     QRSnew = []
-    for i in range(1,s-1):
+    for i in range(1,s-2):
         startP = int(QRS[i-1,2])
         stopP = int(QRS[i,2])
         startT = int(QRS[i,2])
         stopT = int(QRS[i+1,2])
         print(startP, stopP, startT, stopT)
-        sliceP = rmaxs[startP+1:stopP,1]
-        sliceT = rmaxs[startT+1:stopT,1]
-        idxP = range(int(QRS[i-1,0]), int(QRS[i,0]))
-        idxT = range(int(QRS[i,0]), int(QRS[i+1,0]))
+        sliceP = rmaxs[startP+1:stopP,:] #get Pzone (peaks)
+        sliceT = rmaxs[startT+1:stopT,:] #get Tzone (peaks)
+    
         #most significant peak (max in range between 2 QRS peaks)
         if sliceP.shape[0] > 0 and sliceT.shape[0] > 0: #should we remove QRS as well?
-            print("index of max p", sig[idxP[np.argmax(sliceP)]], idxP[np.argmax(sliceP)], np.max(sliceP))
             QRSnew.append(QRS[i,:])
-            P.append([idxP[np.argmax(sliceP)], np.max(sliceP)])
-            T.append([idxT[np.argmax(sliceT)], np.max(sliceT)])
+            P.append([sliceP[np.argmax(sliceP[:,1]),0], np.max(sliceP[:,1])])
+            T.append([sliceT[np.argmax(sliceT[:,1]),0], np.max(sliceT[:,1])])
+
     P = np.array(P)
     T = np.array(T)
     QRS = np.array(QRSnew)
-    print(P, T)
-    ##[mean frequency of P-wave, mean frequency of QRS wave, mean frequency of T wave]    
-    #fs = [np.mean(np.diff(P[:,0])), np.mean(np.diff(QRS[:,0])), np.mean(np.diff(T[:,0]))]
-    #print(fs)
-    # f = np.mean(fs) #?
+    print(P.shape, T.shape, QRS.shape)
+    #[mean frequency of P-wave, mean frequency of QRS wave, mean frequency of T wave]    
+    fs = [np.mean(np.diff(P[:,0])), np.mean(np.diff(QRS[:,0])), np.mean(np.diff(T[:,0]))]
+    print("frequencies of P, QRS, and T", fs)
+    f = np.mean(fs) #?
     
     np.savetxt("neginds.csv", neginds, delimiter=",")
     plt.plot(sig)
     plt.scatter(neginds[:,0], neginds[:,1], color='cyan')
-    plt.scatter(maxs[:,0], maxs[:,1], color='coral')
+    # plt.scatter(maxs[:,0], maxs[:,1], color='coral')
     plt.scatter(QRS[:,0], QRS[:,1], color='maroon')
     plt.scatter(P[:,0], P[:,1], color='lime')
     plt.scatter(T[:,0], T[:,1], color='red')
