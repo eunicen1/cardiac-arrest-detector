@@ -1,20 +1,7 @@
 import numpy as np
-import os 
-import wfdb
 import matplotlib.pyplot as plt
-from wfdb import processing as prc
-from denoise import denoise
-
-name_ca = 'mitbih/420'
-name_norm = 'ecgiddb/Person_01/rec_1'
-record_ca = wfdb.rdrecord(name_ca) 
-record_norm = wfdb.rdrecord(name_norm)
-print('frequency of signal '+ name_ca, ': ', record_ca.__dict__['fs'])
-print('frequency of signal '+ name_norm, ': ', record_norm.__dict__['fs'])
-xca = record_ca.__dict__['p_signal'][:, 0] #0or1: check which channel corresponds to what
-xnorm = record_norm.__dict__['p_signal'][:, 0]
-xca = denoise(xca)
-xnorm = denoise(xnorm)
+#mitbih = 30 mins \ half-hour = 30*60s
+#ecgiddb = 20 s 
 
 #Runtime below: ~O(n log n + n) = ~O(n log n)
 
@@ -33,7 +20,7 @@ def pkRatio(arr, p=0.33):
     ratios = (100*arr[:,1]/avgppeak).reshape(n,1)
     return np.concatenate((arr, ratios), axis=1)
 
-#Input = 1-d signal array
+#Input = 1-d signal array, time of collection in s
 #Output: 2-d array of average [P-wave amplitude,
 # P-wave width from 0-0,
 # QRS-wave amplitude,
@@ -41,7 +28,7 @@ def pkRatio(arr, p=0.33):
 # T-wave amplitude,
 # T-wave width from 0-0,
 # frequency of overall signal] = examples by IID
-def detectPQRSTf(sig):
+def detectPQRSTf(sig, time):
     n = sig.shape[0] #retrieve signal length, n
     neginds = [] #initialize negative index 
     # - peaks are usually encapsulated by negative data
@@ -51,6 +38,8 @@ def detectPQRSTf(sig):
         if(sig[i] < 0):
            neginds.append([i,sig[i]]) 
     neginds = np.array(neginds)
+    if neginds.shape[0] == 0 or neginds is None:
+        return 0,0,0,0,[0,0,0] 
     p, _ = neginds.shape
     maxs = []
     for i in range(p-1):
@@ -73,7 +62,8 @@ def detectPQRSTf(sig):
     QRS = []
     for i in range(r):
         percent = rmaxs[i,2] # obtain percentage %
-        if int(percent) >= 40:
+        thresh = 40
+        if int(percent) >= thresh:
             QRS.append([rmaxs[i,0], rmaxs[i,1], i])
     QRS = np.array(QRS)
     s, _ = QRS.shape
@@ -120,23 +110,27 @@ def detectPQRSTf(sig):
             
     P = np.array(P)
     T = np.array(T)
+    farrP = 0
+    farrQRS = 0
+    farrT = 0
 
-    Pamplitude = np.mean(P[:,1])
-    QRSamplitude = np.mean(QRS[:,1])
-    Tamplitude = np.mean(T[:,1])
+    Pamplitude = 0
+    if P.shape[0] > 0:
+        Pamplitude = np.mean(P[:,1])
+        #[mean frequency of P wave, mean frequency of QRS wave, mean frequency of T wave]    
+        farrP = time/np.mean(np.diff(P[:,0]))
+    QRSamplitude = 0
+    if QRS.shape[0] > 0:
+        QRSamplitude = np.mean(QRS[:,1])
+        #[mean frequency of P wave, mean frequency of QRS wave, mean frequency of T wave]    
+        farrQRS = time/np.mean(np.diff(QRS[:,0]))
+    Tamplitude = 0
+    if T.shape[0] > 0:
+        Tamplitude = np.mean(T[:,1])
+        #[mean frequency of P wave, mean frequency of QRS wave, mean frequency of T wave]    
+        farrT = time/np.mean(np.diff(T[:,0]))
     
-    #[mean frequency of P wave, mean frequency of QRS wave, mean frequency of T wave]    
-    fs = [np.mean(np.diff(P[:,0])), np.mean(np.diff(QRS[:,0])), np.mean(np.diff(T[:,0]))]
-    f = n/np.mean(fs)    
-    # np.savetxt("neginds.csv", neginds, delimiter=",")
-    plt.plot(sig)
-    plt.scatter(rmaxs[:,0], rmaxs[:,1], color='cyan')
-    plt.scatter(QRS[:,0], QRS[:,1], color='maroon')
-    plt.scatter(P[:,0], P[:,1], color='lime')
-    plt.scatter(T[:,0], T[:,1], color='red')
+    fs = [farrP, farrQRS, farrT]
     plt.show()
 
-    return Pamplitude, QRSamplitude, Tamplitude, f, fs
-
-print(detectPQRSTf(xca))
-print(detectPQRSTf(xnorm))
+    return Pamplitude, QRSamplitude, Tamplitude, np.mean(fs), fs
