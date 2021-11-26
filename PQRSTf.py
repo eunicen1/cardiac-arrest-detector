@@ -131,6 +131,7 @@ def detectPQRSTf(sig, time):
         farrT = time/np.mean(np.diff(T[:,0]))
     
     fs = [farrP, farrQRS, farrT]
+    #plt.plot(sig)
     plt.show()
 
     return Pamplitude, QRSamplitude, Tamplitude, np.mean(fs), fs

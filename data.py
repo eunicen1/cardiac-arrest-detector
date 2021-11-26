@@ -1,9 +1,8 @@
 import os
 
-from numpy import singlecomplex
 from PQRSTf import detectPQRSTf
 from denoise import denoise
-from os import listdir
+import numpy as np
 
 import wfdb
 import pandas as pd
@@ -17,7 +16,16 @@ for norm in os.listdir():
     record_norm = wfdb.rdrecord(name_norm)
     xnorm = denoise(record_norm.__dict__['p_signal'][:, 0])
     P, QRS, T, f, fs = detectPQRSTf(xnorm, 20)
-    sigD[name_norm] = [P, QRS, T, f, fs[0], fs[1], fs[2], 'normal']
+    sigD[name_norm] = [
+        round(np.float64(P),6), 
+        round(np.float64(QRS),6), 
+        round(np.float64(T),6), 
+        round(np.float64(f),6),
+        round(np.float64(fs[0]),6), 
+        round(np.float64(fs[1]),6),
+        round(np.float64(fs[2]),6), 
+        round(np.float64(0),6),
+        ]
 
 os.chdir('../mitbih') #change to ca ecg; t=30mins
 print(os.getcwd())
@@ -30,10 +38,22 @@ for ca in files:
     record_ca = wfdb.rdrecord(str(ca))
     xca = denoise(record_ca.__dict__['p_signal'][:, 0])
     P, QRS, T, f, fs = detectPQRSTf(xca, 30*60)
-    sigD[ca] = [P, QRS, T, f, fs[0], fs[1], fs[2], 'cardiac arrest']
+    sigD[ca] = [
+        round(np.float64(P),6), 
+        round(np.float64(QRS),6), 
+        round(np.float64(T),6), 
+        round(np.float64(f),6),
+        round(np.float64(fs[0]),6), 
+        round(np.float64(fs[1]),6),
+        round(np.float64(fs[2]),6), 
+        round(np.float64(1),6),
+        ]
 
 sigPD = pd.DataFrame.from_dict(sigD).T
 colnames = ['P', 'QRS', 'T', 'f', 'fP', 'fQRS', 'fT', 'y']
 sigPD.columns = colnames
 sigPD=sigPD.fillna(0)
 sigPD.to_csv('../data.csv')
+
+#cardiac arrest == 1
+#normal == 0
