@@ -1,12 +1,10 @@
 import numpy as np
-import matplotlib.pyplot as plt
-#mitbih = 30 mins \ half-hour = 30*60s
-#ecgiddb = 20 s 
+# import matplotlib.pyplot as plt
 
 #Runtime below: ~O(n log n + n) = ~O(n log n)
 
 #Input: 2-d array [indexpeak, peakamp]
-#Output: 2-d array of [indexpeak, peakamp, ratiorel2Avgpeak] 
+#Output: 2-d array of [indexpeak, peakamp, ratiorel2Avgpeak]
 def pkRatio(arr, p=0.33):
     print("top "+str(p*100.0)+"%-peaks")
     #find mean of top p-th% peaks
@@ -16,37 +14,35 @@ def pkRatio(arr, p=0.33):
     arr2.sort(kind='mergesort') # sorts array in place
     # print(arr2, arr2[n-Δp-1:])
     avgppeak = np.mean(arr2[n-Δp-1:])
-    #determine ratio of peaks 
+    #determine ratio of peaks
     ratios = (100*arr[:,1]/avgppeak).reshape(n,1)
     return np.concatenate((arr, ratios), axis=1)
 
 #Input = 1-d signal array, time of collection in s
 #Output: 2-d array of average [P-wave amplitude,
-# P-wave width from 0-0,
 # QRS-wave amplitude,
-# QRS-wave width from 0-0,
 # T-wave amplitude,
-# T-wave width from 0-0,
-# frequency of overall signal] = examples by IID
+# frequency of overall signal,
+# array of P-QRS-T frequencies] = examples by IID
 def detectPQRSTf(sig, time):
     n = sig.shape[0] #retrieve signal length, n
-    neginds = [] #initialize negative index 
+    neginds = [] #initialize negative index
     # - peaks are usually encapsulated by negative data
     # ----- 00 ++++++ peak +++++ 00 -----
     for i in range(n):
-        # append negative indexes to array 
+        # append negative indexes to array
         if(sig[i] < 0):
-           neginds.append([i,sig[i]]) 
+           neginds.append([i,sig[i]])
     neginds = np.array(neginds)
     if neginds.shape[0] == 0 or neginds is None:
-        return 0,0,0,0,[0,0,0] 
+        return 0,0,0,0,[0,0,0]
     p, _ = neginds.shape
     maxs = []
     for i in range(p-1):
-        start = neginds[i,0] 
+        start = neginds[i,0]
         stop = neginds[i+1,0]
         Δ = stop - start
-        if Δ > 1: 
+        if Δ > 1:
             idx = range(int(start), int(stop))
             slice = sig[int(start):int(stop)]
             #get max and index of a potential peak
@@ -68,7 +64,7 @@ def detectPQRSTf(sig, time):
     QRS = np.array(QRS)
     s, _ = QRS.shape
 
-    #get estimated P, T, QRS(mod) peaks 
+    #get estimated P, T, QRS(mod) peaks
     P = []
     T = []
     for i in range(s):
@@ -80,7 +76,7 @@ def detectPQRSTf(sig, time):
                 P.append([slice[np.argmax(slice[:, 1]), 0], np.max(slice[:, 1])])
             elif i == s-1:
                 T.append([slice[np.argmax(slice[:, 1]), 0], np.max(slice[:, 1])])
-            else: 
+            else:
                 #predict for 2 maxes and append greater distance from QRS to P then further to T
                 #T_{i-1}
                 maxT = np.max(slice[:,1])
@@ -107,7 +103,7 @@ def detectPQRSTf(sig, time):
                 pi = start + (2/3)*int(stop - start)
                 P.append([pi, 0])
                 T.append([ti1, 0])
-            
+
     P = np.array(P)
     T = np.array(T)
     farrP = 0
@@ -117,21 +113,28 @@ def detectPQRSTf(sig, time):
     Pamplitude = 0
     if P.shape[0] > 0:
         Pamplitude = np.mean(P[:,1])
-        #[mean frequency of P wave, mean frequency of QRS wave, mean frequency of T wave]    
+        #[mean frequency of P wave, mean frequency of QRS wave, mean frequency of T wave]
         farrP = time/np.mean(np.diff(P[:,0]))
     QRSamplitude = 0
     if QRS.shape[0] > 0:
         QRSamplitude = np.mean(QRS[:,1])
-        #[mean frequency of P wave, mean frequency of QRS wave, mean frequency of T wave]    
+        #[mean frequency of P wave, mean frequency of QRS wave, mean frequency of T wave]
         farrQRS = time/np.mean(np.diff(QRS[:,0]))
     Tamplitude = 0
     if T.shape[0] > 0:
         Tamplitude = np.mean(T[:,1])
-        #[mean frequency of P wave, mean frequency of QRS wave, mean frequency of T wave]    
+        #[mean frequency of P wave, mean frequency of QRS wave, mean frequency of T wave]
         farrT = time/np.mean(np.diff(T[:,0]))
-    
+
     fs = [farrP, farrQRS, farrT]
-    #plt.plot(sig)
-    plt.show()
+    # plt.plot(sig)
+    # plt.scatter(rmaxs[:,0], rmaxs[:,1], color='cyan')
+    # plt.scatter(QRS[:,0], QRS[:,1], color='maroon')
+    # plt.scatter(T[:,0], T[:,1], color='red')
+    # plt.scatter(P[:,0], P[:,1], color='lime')
+    # plt.xlabel("progression")
+    # plt.ylabel("voltage")
+    # plt.title(title)
+    # plt.show()
 
     return Pamplitude, QRSamplitude, Tamplitude, np.mean(fs), fs

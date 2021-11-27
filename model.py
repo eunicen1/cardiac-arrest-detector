@@ -6,7 +6,7 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import confusion_matrix
 
-np.random.seed(91)
+np.random.seed(457)
 
 #setup
 df = pd.read_csv('data2.csv', delimiter=',')
@@ -39,7 +39,7 @@ print(kscores)
 kscores = np.array([kscores[i,:] for i in range(c-1) if np.isnan(kscores[i,1]) == False])
 print(kscores)
 kscore = kscores[np.argmin(kscores[:,1]),0] #select best kscore
-print('best score is @ seed === 91: ', kscore)
+print('best score is @ seed === 457: ', kscore)
 #training
 nnModel = KNeighborsClassifier(n_neighbors=int(kscore))
 nnModel.fit(Xtrain, ytrain)
