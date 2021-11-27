@@ -5,6 +5,8 @@ from sklearn.model_selection import cross_val_score
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import confusion_matrix
+import matplotlib.pyplot as plt
+from sklearn.metrics import plot_roc_curve as pltroc
 
 np.random.seed(457)
 
@@ -47,4 +49,7 @@ nnModel.fit(Xtrain, ytrain)
 ypred = nnModel.predict(Xtest)
 acc = accuracy_score(ytest, ypred)
 cm = confusion_matrix(ytest, ypred)
+pltroc(nnModel, Xtest, ytest)
+plt.title("ROC Curve and AUC score")
+plt.show()
 print(acc, cm)
