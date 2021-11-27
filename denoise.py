@@ -15,6 +15,6 @@ def denoise(sig):
     Q3 = np.quantile(sig, 0.75)
     highlier = Q3 + 0.5 * iqrange
     #remove noise
-    pwrSpec2 = pwrSpec*(pwrSpec > highlier)
+    #pwrSpec2 = pwrSpec*(pwrSpec > highlier)
     F2 = F*(pwrSpec > highlier)
     return np.real(np.fft.ifft(F2)) #cleaned signal output
